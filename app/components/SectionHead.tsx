@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { LucideIcon } from 'lucide-react'
 
 import { Eyebrow } from './Eyebrow'
 
@@ -8,23 +7,13 @@ type SectionHeadProps = {
   title: ReactNode
   /** truthful item count for this section, e.g. `03 marcas` */
   count: string
-  variant?: 'purple' | 'magenta'
-  icon?: LucideIcon
 }
 
-export function SectionHead({
-  eyebrow,
-  title,
-  count,
-  variant,
-  icon,
-}: SectionHeadProps) {
+export function SectionHead({ eyebrow, title, count }: SectionHeadProps) {
   return (
-    <div className='mb-11 flex items-end justify-between gap-5 border-b-[3px] border-bone pb-6'>
+    <div className='mb-12 flex items-end justify-between gap-6 border-b-[3px] border-bone pb-6'>
       <div>
-        <Eyebrow variant={variant} icon={icon}>
-          {eyebrow}
-        </Eyebrow>
+        <Eyebrow>{eyebrow}</Eyebrow>
         <h2 className='glitch mt-4 font-display text-[clamp(34px,6vw,64px)] uppercase leading-[0.9] tracking-[-0.02em]'>
           {title}
         </h2>

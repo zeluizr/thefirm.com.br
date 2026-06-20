@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowUpRight, Boxes } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
 import { SectionHead } from './SectionHead'
 import { Wrap } from './Wrap'
@@ -18,23 +18,23 @@ const operations: Operation[] = [
   {
     name: 'commente',
     accent: '.me',
-    kind: 'consultoría',
-    desc: 'Consultoría boutique de e-commerce. VTEX, mercado LATAM, del catálogo al checkout.',
+    kind: 'agencia · vtex',
+    desc: 'Agencia de marketing digital e implementación de tiendas VTEX — de la estrategia a la tienda en marcha.',
     href: 'https://commente.me',
   },
   {
     name: 'integram',
     accent: '.me',
-    kind: 'saas · b2b',
-    desc: 'Middleware B2B en SaaS. ERP → VTEX sin dolor, con integración que no se rompe.',
+    kind: 'saas · integración',
+    desc: 'Sincroniza SKUs, precios y stock entre tu ERP y VTEX en tiempo real — pedidos, logística y marketplaces (Falabella, Ripley) en un solo panel.',
     href: 'https://integram.me',
   },
   {
-    // TODO(zeluiz): confirmar URL, acento del wordmark y copy en español de inmmerce
+    // TODO(zeluiz): confirmar la URL canónica de inmmerce (¿inmmerce.eadbox.com?)
     name: 'inmmerce',
     kind: 'escuela',
-    desc: 'Nuestra escuela de e-commerce. (descripción por definir)',
-    href: '#',
+    desc: 'La primera escuela de e-commerce con certificación oficial VTEX. Cursos on-demand para developers y backoffice, a tu ritmo.',
+    href: 'https://inmmerce.eadbox.com',
   },
 ]
 
@@ -46,7 +46,7 @@ function OpCard({ op }: { op: Operation }) {
       href={op.href}
       target='_blank'
       rel='noopener'
-      className='group relative flex flex-col border-[3px] border-bone bg-void-2 p-[30px] no-underline'
+      className='group relative flex flex-col border-[3px] border-bone bg-void-2 p-8 no-underline'
       style={{ boxShadow: '7px 7px 0 #ff41b4' }}
       whileHover={
         reduceMotion ? undefined : { x: -3, y: -3, boxShadow: '10px 10px 0 #ff41b4' }
@@ -55,15 +55,17 @@ function OpCard({ op }: { op: Operation }) {
         reduceMotion ? undefined : { x: 4, y: 4, boxShadow: '1px 1px 0 #ff41b4' }
       }
     >
-      <span className='font-mono text-[12px] uppercase tracking-[2px] text-bone-dim group-hover:text-magenta motion-reduce:group-hover:text-bone-dim'>
+      <span className='font-mono text-[12px] uppercase leading-none tracking-[2px] text-bone-dim group-hover:text-magenta motion-reduce:group-hover:text-bone-dim'>
         {op.kind}
       </span>
-      <div className='mt-3 font-display text-[clamp(26px,4vw,40px)] lowercase tracking-[-0.02em] text-bone'>
+      <div className='mt-4 font-display text-[clamp(26px,4vw,40px)] lowercase leading-[0.95] tracking-[-0.02em] text-bone'>
         {op.name}
         {op.accent ? <span className='text-wire'>{op.accent}</span> : null}
       </div>
-      <div className='mt-[10px] flex-1 font-medium text-bone-dim'>{op.desc}</div>
-      <span className='mt-[26px] inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[1px] text-bone'>
+      <div className='mt-3 flex-1 font-medium leading-[1.55] text-bone-dim'>
+        {op.desc}
+      </div>
+      <span className='mt-7 inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[1px] text-bone'>
         visitar
         <ArrowUpRight
           className='transition-transform duration-150 group-hover:translate-x-[4px] group-hover:-translate-y-[4px] motion-reduce:transition-none'
@@ -78,15 +80,14 @@ function OpCard({ op }: { op: Operation }) {
 
 export function Operations() {
   return (
-    <section id='firm' className='py-[84px]'>
+    <section id='firm' className='py-20 bp:py-[120px]'>
       <Wrap>
         <SectionHead
-          icon={Boxes}
           eyebrow='la firma'
           count='03 marcas'
           title='las operaciones'
         />
-        <div className='grid grid-cols-1 gap-[26px] bp:grid-cols-3'>
+        <div className='grid grid-cols-1 gap-6 bp:grid-cols-3'>
           {operations.map((op) => (
             <OpCard key={op.name} op={op} />
           ))}

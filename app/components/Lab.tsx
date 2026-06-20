@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowUpRight, FlaskConical } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 
 import { SectionHead } from './SectionHead'
 import { Wrap } from './Wrap'
@@ -60,7 +60,7 @@ function ExpCard({ exp }: { exp: Experiment }) {
       href={exp.href}
       target='_blank'
       rel='noopener'
-      className='group relative flex min-h-[150px] flex-col border-[3px] border-bone p-[22px] no-underline'
+      className='group relative flex min-h-[160px] flex-col border-[3px] border-bone p-6 no-underline'
       style={{ backgroundColor: '#1c1526', boxShadow: '4px 4px 0 #ff41b4' }}
       whileHover={
         reduceMotion
@@ -82,13 +82,13 @@ function ExpCard({ exp }: { exp: Experiment }) {
         strokeWidth={2.5}
         aria-hidden='true'
       />
-      <div className='font-display text-[24px] lowercase tracking-[-0.01em] text-bone'>
+      <div className='font-display text-[24px] lowercase leading-[1.05] tracking-[-0.01em] text-bone'>
         {exp.name}
       </div>
-      <div className='mt-2 flex-1 text-[16px] font-medium text-bone-dim'>
+      <div className='mt-2 flex-1 text-[15px] font-medium leading-[1.5] text-bone-dim'>
         {exp.what}
       </div>
-      <div className='mt-[14px] font-mono text-[11px] uppercase tracking-[1px] text-bone-dim group-hover:text-magenta motion-reduce:group-hover:text-bone-dim'>
+      <div className='mt-4 font-mono text-[11px] uppercase leading-none tracking-[1px] text-bone-dim group-hover:text-magenta motion-reduce:group-hover:text-bone-dim'>
         {exp.meta}
       </div>
     </motion.a>
@@ -97,10 +97,9 @@ function ExpCard({ exp }: { exp: Experiment }) {
 
 export function Lab() {
   return (
-    <section id='lab' className='py-[84px]'>
+    <section id='lab' className='py-20 bp:py-[120px]'>
       <Wrap>
         <SectionHead
-          icon={FlaskConical}
           eyebrow='el laboratorio'
           count='06 proyectos'
           title={
@@ -111,7 +110,7 @@ export function Lab() {
             </>
           }
         />
-        <p className='mb-[38px] max-w-[560px] font-medium text-bone-dim'>
+        <p className='mb-10 max-w-[560px] font-medium leading-[1.55] text-bone-dim'>
           Cosas que construí porque me dieron ganas. Algunas se vuelven producto,
           otras aprendizaje — y está bien.
         </p>

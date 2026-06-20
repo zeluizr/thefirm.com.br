@@ -1,5 +1,3 @@
-import { History } from 'lucide-react'
-
 import { SectionHead } from './SectionHead'
 import { Wrap } from './Wrap'
 
@@ -15,19 +13,19 @@ const eras: Era[] = [
   {
     num: '01',
     title: 'La broma',
-    body: 'Nació de una broma con The Firm, la marca de skate de Bob Burnquist. El nombre pegó — y antes de que me diera cuenta, ya era un dominio de verdad.',
+    body: 'São Paulo, 20/03/2007. Necesitaba hacer una plata y quería armar sitios para mi gente del skate — un nombre fácil de asociar. The Firm, el team de Bob Burnquist, era ese nombre. Ahí conocí a Denis Buiu, a Fabio Sleiman y a una banda de cracks de la escena: mi mejor época sobre la tabla. La broma pegó, y antes de darme cuenta ya era un dominio de verdad.',
     tag: 'el origen',
   },
   {
     num: '02',
     title: 'La era freelancer',
-    body: 'Durante mucho tiempo así me encontraban los clientes. thefirm.com.br era, en la práctica, yo. Mi primera dirección en la web con nombre propio.',
+    body: 'Durante años, The Firm fue mi nombre. Así me encontraban los clientes mientras la carrera crecía — de São Paulo a Río, a Buenos Aires, a Santiago. thefirm.com.br era, en la práctica, yo.',
     tag: 'el auge',
   },
   {
     num: '03',
     title: 'El letargo',
-    body: 'Entonces el sitio murió. El dominio siguió pago, renovación tras renovación, pero la luz se había apagado. Una dirección sin casa adentro.',
+    body: 'Después lo fui dejando de lado. Llegaron los proyectos grandes y, más tarde, commente, inmmerce, integram — y la luz de The Firm se apagó. El dominio siguió pago, renovación tras renovación: una dirección sin casa adentro.',
     tag: 'el silencio',
   },
   {
@@ -41,11 +39,9 @@ const eras: Era[] = [
 
 export function Eras() {
   return (
-    <section id='origin' className='py-[84px]'>
+    <section id='origin' className='py-20 bp:py-[120px]'>
       <Wrap>
         <SectionHead
-          variant='magenta'
-          icon={History}
           eyebrow='la ficha del dominio'
           count='04 vidas'
           title={
@@ -66,7 +62,7 @@ export function Eras() {
           return (
             <div
               key={era.num}
-              className={`grid grid-cols-[70px_1fr] items-start gap-4 border-t-[3px] border-bone py-[30px] bp:grid-cols-[130px_1fr] bp:gap-7 ${
+              className={`grid grid-cols-[64px_1fr] items-start gap-5 border-t-[3px] border-bone py-8 bp:grid-cols-[128px_1fr] bp:gap-8 bp:py-10 ${
                 isLast ? 'border-b-[3px]' : ''
               }`}
             >
@@ -78,12 +74,14 @@ export function Eras() {
                 {era.num}
               </div>
               <div>
-                <h3 className='mb-2 text-[25px] font-bold text-bone'>
+                <h3 className='mb-3 text-[24px] font-bold leading-[1.15] text-bone'>
                   {era.title}
                 </h3>
-                <p className='max-w-[640px] text-bone-dim'>{era.body}</p>
+                <p className='max-w-[640px] leading-[1.6] text-bone-dim'>
+                  {era.body}
+                </p>
                 <span
-                  className={`mt-3 inline-block border-2 border-bone px-[9px] py-[3px] font-mono text-[12px] uppercase tracking-[1px] ${
+                  className={`mt-4 inline-block border-2 border-bone px-[10px] py-1 font-mono text-[12px] uppercase leading-none tracking-[1px] ${
                     era.alive ? 'bg-magenta text-void' : 'text-bone'
                   }`}
                 >
