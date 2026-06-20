@@ -1,30 +1,50 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-paper: #efeadd;
-  --color-paper-2: #e6e0cf;
+  /* canvas — preto-arroxeado (ecoa el #2a212c de integram, no negro puro) */
+  --color-void: #15101b;
+  --color-void-2: #1c1526;
+  --color-void-3: #271c33;
+
+  /* texto — conserva el calor crema de la marca */
+  --color-bone: #efeadd;
+  --color-bone-dim: #a79ea8;
+
+  /* marca integram.me — morado + magenta */
+  --color-purple: #a463f2;
+  --color-purple-deep: #6e2fba;
+  --color-purple-soft: #bc92f5;
+  --color-magenta: #ff41b4;
+  --color-magenta-soft: #f97dcf;
+
+  /* tinta real, para sellos puntuales sobre acento claro */
   --color-ink: #141414;
-  --color-ink-soft: #2b2b2b;
-  --color-teal: #12e0ae;
-  --color-orange: #ff5530;
-  --color-muted: #8a857a;
-  --color-paper-dim: #a8a298;
 
   --font-display: 'Archivo Black', sans-serif;
   --font-body: 'Space Grotesk', sans-serif;
   --font-mono: 'Space Mono', monospace;
 
-  --shadow-hard: 7px 7px 0 #141414;
-  --shadow-hard-sm: 4px 4px 0 #141414;
+  /* sombras duras ahora eléctricas */
+  --shadow-hard: 7px 7px 0 #ff41b4;
+  --shadow-hard-sm: 4px 4px 0 #ff41b4;
+  --shadow-hard-purple: 7px 7px 0 #a463f2;
 
   /* single breakpoint mirrors the reference @media (max-width: 720px):
      base styles are mobile, `bp:` (>=721px) restores the desktop layout */
   --breakpoint-bp: 721px;
 }
 
-/* outline number used by the eras (paper fill + ink stroke) */
-@utility text-stroke-ink {
-  -webkit-text-stroke: 2.5px var(--color-ink);
+/* outline number used by the eras (void fill + bone stroke) */
+@utility text-stroke-bone {
+  -webkit-text-stroke: 2.5px var(--color-bone);
+}
+
+/* texto rellenado con el degradado de marca (morado → magenta) */
+@utility text-wire {
+  background: linear-gradient(120deg, var(--color-purple), var(--color-magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 @layer base {
@@ -33,8 +53,13 @@
   }
 
   body {
-    background: var(--color-paper);
-    color: var(--color-ink);
+    background-color: var(--color-void);
+    /* rejilla tenue tipo blueprint — guiño al grid de integram.me */
+    background-image:
+      linear-gradient(90deg, #efeadd0a 1px, transparent 1px),
+      linear-gradient(#efeadd0a 1px, transparent 1px);
+    background-size: 64px 64px;
+    color: var(--color-bone);
     font-family: var(--font-body);
     font-size: 16px;
     line-height: 1.55;
@@ -52,8 +77,13 @@
     color: inherit;
   }
 
+  ::selection {
+    background: var(--color-magenta);
+    color: var(--color-void);
+  }
+
   :focus-visible {
-    outline: 3px solid var(--color-orange);
+    outline: 3px solid var(--color-magenta);
     outline-offset: 2px;
   }
 
@@ -61,5 +91,86 @@
     html {
       scroll-behavior: auto;
     }
+  }
+}
+
+/* ── firma punk: borde de degradado animado (truco de máscara, como integram) ── */
+@layer components {
+  .wire-border {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .wire-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 3px;
+    background: linear-gradient(
+      120deg,
+      var(--color-purple),
+      var(--color-magenta),
+      var(--color-purple)
+    );
+    background-size: 200% 200%;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: wire-pan 4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* RGB-split al hacer hover/focus sobre los títulos display */
+  .glitch {
+    position: relative;
+  }
+
+  .glitch:hover,
+  .glitch:focus-visible {
+    animation: glitch-shake 0.3s steps(2, end) 1;
+    text-shadow:
+      0.045em 0 0 var(--color-magenta),
+      -0.045em 0 0 var(--color-purple);
+  }
+}
+
+@keyframes wire-pan {
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes glitch-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, -1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wire-border::before {
+    animation: none;
+  }
+
+  /* conserva el split cromático, sin sacudida */
+  .glitch:hover,
+  .glitch:focus-visible {
+    animation: none;
+    text-shadow:
+      0.03em 0 0 var(--color-magenta),
+      -0.03em 0 0 var(--color-purple);
   }
 }

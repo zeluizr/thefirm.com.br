@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { ArrowUpRight, Boxes } from 'lucide-react'
 
 import { Eyebrow } from './Eyebrow'
 import { Wrap } from './Wrap'
@@ -40,25 +41,28 @@ function OpCard({ op }: { op: Operation }) {
       href={op.href}
       target='_blank'
       rel='noopener'
-      className='group relative block border-[3px] border-ink bg-paper p-[30px] no-underline'
-      style={{ boxShadow: '7px 7px 0 #141414' }}
+      className='group relative block border-[3px] border-bone bg-void-2 p-[30px] no-underline'
+      style={{ boxShadow: '7px 7px 0 #ff41b4' }}
       whileHover={
-        reduceMotion ? undefined : { x: -3, y: -3, boxShadow: '10px 10px 0 #141414' }
+        reduceMotion ? undefined : { x: -3, y: -3, boxShadow: '10px 10px 0 #ff41b4' }
       }
       whileTap={
-        reduceMotion ? undefined : { x: 4, y: 4, boxShadow: '1px 1px 0 #141414' }
+        reduceMotion ? undefined : { x: 4, y: 4, boxShadow: '1px 1px 0 #ff41b4' }
       }
     >
-      <div className='font-display text-[clamp(26px,4vw,40px)] lowercase tracking-[-0.02em]'>
+      <div className='font-display text-[clamp(26px,4vw,40px)] lowercase tracking-[-0.02em] text-bone'>
         {op.name}
-        {op.accent ? <span className='text-orange'>{op.accent}</span> : null}
+        {op.accent ? <span className='text-wire'>{op.accent}</span> : null}
       </div>
-      <div className='mt-[10px] font-medium text-ink-soft'>{op.desc}</div>
-      <span className='mt-[22px] inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[1px]'>
+      <div className='mt-[10px] font-medium text-bone-dim'>{op.desc}</div>
+      <span className='mt-[22px] inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[1px] text-bone'>
         visitar
-        <span className='transition-transform duration-150 group-hover:translate-x-[5px] motion-reduce:transition-none'>
-          →
-        </span>
+        <ArrowUpRight
+          className='transition-transform duration-150 group-hover:translate-x-[4px] group-hover:-translate-y-[4px] motion-reduce:transition-none'
+          size={16}
+          strokeWidth={2.5}
+          aria-hidden='true'
+        />
       </span>
     </motion.a>
   )
@@ -69,8 +73,8 @@ export function Operations() {
     <section id='firm' className='py-[84px]'>
       <Wrap>
         <div className='mb-11'>
-          <Eyebrow>la firma</Eyebrow>
-          <h2 className='mt-4 font-display text-[clamp(34px,6vw,64px)] uppercase leading-[0.9] tracking-[-0.02em]'>
+          <Eyebrow icon={Boxes}>la firma</Eyebrow>
+          <h2 className='glitch mt-4 font-display text-[clamp(34px,6vw,64px)] uppercase leading-[0.9] tracking-[-0.02em]'>
             las operaciones
           </h2>
         </div>

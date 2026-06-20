@@ -1,3 +1,5 @@
+import { History } from 'lucide-react'
+
 import { Eyebrow } from './Eyebrow'
 import { Wrap } from './Wrap'
 
@@ -42,8 +44,10 @@ export function Eras() {
     <section id='origin' className='py-[84px]'>
       <Wrap>
         <div className='mb-11'>
-          <Eyebrow variant='orange'>la ficha del dominio</Eyebrow>
-          <h2 className='mt-4 font-display text-[clamp(34px,6vw,64px)] uppercase leading-[0.9] tracking-[-0.02em]'>
+          <Eyebrow variant='magenta' icon={History}>
+            la ficha del dominio
+          </Eyebrow>
+          <h2 className='glitch mt-4 font-display text-[clamp(34px,6vw,64px)] uppercase leading-[0.9] tracking-[-0.02em]'>
             las vidas de
             <br />
             esta dirección
@@ -59,23 +63,25 @@ export function Eras() {
           return (
             <div
               key={era.num}
-              className={`grid grid-cols-[70px_1fr] items-start gap-4 border-t-[3px] border-ink py-[30px] bp:grid-cols-[130px_1fr] bp:gap-7 ${
+              className={`grid grid-cols-[70px_1fr] items-start gap-4 border-t-[3px] border-bone py-[30px] bp:grid-cols-[130px_1fr] bp:gap-7 ${
                 isLast ? 'border-b-[3px]' : ''
               }`}
             >
               <div
                 className={`font-display text-[44px] leading-none bp:text-[64px] ${
-                  filled ? 'text-ink' : 'text-paper text-stroke-ink'
+                  filled ? 'text-wire' : 'text-void text-stroke-bone'
                 }`}
               >
                 {era.num}
               </div>
               <div>
-                <h3 className='mb-2 text-[25px] font-bold'>{era.title}</h3>
-                <p className='max-w-[640px] text-ink-soft'>{era.body}</p>
+                <h3 className='mb-2 text-[25px] font-bold text-bone'>
+                  {era.title}
+                </h3>
+                <p className='max-w-[640px] text-bone-dim'>{era.body}</p>
                 <span
-                  className={`mt-3 inline-block border-2 border-ink px-[9px] py-[3px] font-mono text-[12px] uppercase tracking-[1px] ${
-                    era.alive ? 'bg-teal' : 'bg-paper-2'
+                  className={`mt-3 inline-block border-2 border-bone px-[9px] py-[3px] font-mono text-[12px] uppercase tracking-[1px] ${
+                    era.alive ? 'bg-magenta text-void' : 'text-bone'
                   }`}
                 >
                   {era.tag}

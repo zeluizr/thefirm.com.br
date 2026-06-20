@@ -10,6 +10,7 @@ import type { Route } from './+types/root'
 import stylesheet from './app.css?url'
 
 export const links: Route.LinksFunction = () => [
+  { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
     rel: 'preconnect',
@@ -32,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className='bg-paper font-body text-ink antialiased overflow-x-hidden'>
+      <body className='bg-void font-body text-bone antialiased overflow-x-hidden'>
         {children}
         <ScrollRestoration />
         <Scripts />
