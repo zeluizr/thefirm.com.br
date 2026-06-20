@@ -1,3 +1,4 @@
+import { MotionConfig } from 'framer-motion'
 import {
   Links,
   Meta,
@@ -32,6 +33,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
         <Meta />
         <Links />
+        {/* sin JS, framer-motion no anima: revelamos todo en su posición final
+            para que el contenido nunca quede invisible */}
+        <noscript>
+          <style>{`*{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
       </head>
       <body className='bg-void font-body text-bone antialiased overflow-x-hidden'>
         {children}
@@ -43,5 +49,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />
+  return (
+    <MotionConfig reducedMotion='user'>
+      <Outlet />
+    </MotionConfig>
+  )
 }

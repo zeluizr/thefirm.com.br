@@ -1,6 +1,8 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 
+import { inView, reveal, springSnap, stagger } from '~/lib/motion'
+
 import { SectionHead } from './SectionHead'
 import { Wrap } from './Wrap'
 
@@ -11,44 +13,33 @@ type Experiment = {
   href: string
 }
 
-// links point to GitHub as placeholders until each project gets its own home —
-// palta is already published to npm
+// los trabajos de la era The Firm — la marca, el cantor, los cracks del team.
+// por ahora apuntan a subdominios de thefirm.com.br que reviven cada sitio;
+// el original de plasma sigue vivo en el archive (ver plasmafootwear.com.br)
 const experiments: Experiment[] = [
   {
-    name: 'palta',
-    what: 'Validación y formato para datos latinoamericanos: CPF, CNPJ, RUT, CUIT, NIT, RUC, monedas, teléfonos y códigos postales.',
-    meta: 'lib · latam',
-    href: 'https://www.npmjs.com/package/@zeluizr/palta',
+    name: 'plasma',
+    what: 'La marca de skate paulista. Uno de los primeros sitios que armé bajo The Firm — de vuelta como prototipo, veinte años después.',
+    meta: 'sitio · marca skate',
+    href: 'https://plasma.thefirm.com.br',
   },
   {
-    name: 'vtex-io-mcp',
-    what: 'Servidor MCP para desarrollo en VTEX IO: Store Framework, React, servicios Node y soporte GraphQL.',
-    meta: 'mcp · server',
-    href: 'https://github.com/zeluizr',
+    name: 'afrox',
+    what: 'El sitio del cantor, de los primeros que hice cuando The Firm recién arrancaba. Revivido como prototipo, dos décadas más tarde.',
+    meta: 'sitio · música',
+    href: 'https://afrox.thefirm.com.br',
   },
   {
-    name: 'vtex-io-snippets',
-    what: 'Extensión de VS Code con autocompletado, IntelliSense y snippets para bloques de VTEX IO Store Framework, con validación de props anidadas.',
-    meta: 'vscode · ext',
-    href: 'https://github.com/zeluizr',
+    name: 'denis buiu',
+    what: 'Sitio homenaje para uno de los cracks del team original — su parte, sus líneas, veinte años después. Prototipo en construcción.',
+    meta: 'sitio · skate',
+    href: 'https://denisbuiu.thefirm.com.br',
   },
   {
-    name: 'vtex-snap',
-    what: 'CLI para clonar el catálogo completo de una tienda VTEX a otra.',
-    meta: 'cli',
-    href: 'https://github.com/zeluizr',
-  },
-  {
-    name: 'ai-cost-proxy',
-    what: 'Proxy en Cloudflare Workers que registra tokens y costo de IA por equipo y caso de uso, con topes mensuales, alertas y dashboard.',
-    meta: 'cloudflare',
-    href: 'https://github.com/zeluizr',
-  },
-  {
-    name: 'prompt-snap',
-    what: 'Herramienta web para estimar el costo de prompts en modelos de IA con precios en tiempo real de la API de OpenRouter.',
-    meta: 'web · tool',
-    href: 'https://github.com/zeluizr',
+    name: 'fabio sleiman',
+    what: 'Otro nombre de aquella época sobre la tabla, de vuelta en la web — el sitio que habría armado en 2007, ahora 20 años después. Prototipo.',
+    meta: 'sitio · skate',
+    href: 'https://fabiosleiman.thefirm.com.br',
   },
 ]
 
@@ -60,6 +51,7 @@ function ExpCard({ exp }: { exp: Experiment }) {
       href={exp.href}
       target='_blank'
       rel='noopener'
+      variants={reveal}
       className='group relative flex min-h-40 flex-col border-[3px] border-bone p-6 no-underline'
       style={{ backgroundColor: '#1c1526', boxShadow: '4px 4px 0 #ff41b4' }}
       whileHover={
@@ -70,10 +62,13 @@ function ExpCard({ exp }: { exp: Experiment }) {
               y: -3,
               boxShadow: '7px 7px 0 #ff41b4',
               backgroundColor: '#271c33',
+              transition: springSnap,
             }
       }
       whileTap={
-        reduceMotion ? undefined : { x: 2, y: 2, boxShadow: '1px 1px 0 #ff41b4' }
+        reduceMotion
+          ? undefined
+          : { x: 2, y: 2, boxShadow: '1px 1px 0 #ff41b4', transition: springSnap }
       }
     >
       <ArrowUpRight
@@ -100,25 +95,32 @@ export function Lab() {
     <section id='lab' className='py-20 bp:py-30'>
       <Wrap>
         <SectionHead
-          eyebrow='el laboratorio'
-          count='06 proyectos'
+          eyebrow='el archivo'
+          count='04 sitios'
           title={
             <>
-              experimentos
+              los sitios
               <br />
-              sueltos
+              de the firm
             </>
           }
         />
         <p className='mb-10 max-w-140 font-medium leading-[1.55] text-bone-dim'>
-          Cosas que construí porque me dieron ganas. Algunas se vuelven producto,
-          otras aprendizaje — y está bien.
+          Los primeros trabajos bajo el nombre The Firm, allá por 2007 — la marca
+          de skate, el cantor, los cracks del team. De vuelta como prototipos,
+          veinte años después.
         </p>
-        <div className='grid grid-cols-1 gap-5 bp:grid-cols-3'>
+        <motion.div
+          className='grid grid-cols-1 gap-5 bp:grid-cols-2 bp:gap-6'
+          variants={stagger}
+          initial='hidden'
+          whileInView='show'
+          viewport={inView}
+        >
           {experiments.map((exp) => (
             <ExpCard key={exp.name} exp={exp} />
           ))}
-        </div>
+        </motion.div>
       </Wrap>
     </section>
   )

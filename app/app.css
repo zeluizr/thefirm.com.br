@@ -122,6 +122,46 @@
     pointer-events: none;
   }
 
+  /* censura tipo zine: una barra opaca tapa el texto hasta que se pasa el
+     mouse, se enfoca con teclado o se toca (data-open). el texto sigue en el
+     DOM, así que lectores de pantalla igual lo anuncian */
+  .spoiler {
+    --spoiler-bar: currentColor;
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    background: none;
+    border: 0;
+    padding: 0 0.14em;
+  }
+
+  .spoiler::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--spoiler-bar);
+    transition: opacity 0.18s ease;
+  }
+
+  .spoiler:hover::after,
+  .spoiler:focus-visible::after,
+  .spoiler[data-open='true']::after {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .spoiler--magenta {
+    --spoiler-bar: var(--color-magenta);
+  }
+
+  .spoiler--block {
+    display: block;
+  }
+
   /* RGB-split al hacer hover/focus sobre los títulos display */
   .glitch {
     position: relative;
@@ -161,6 +201,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .spoiler::after {
+    transition: none;
+  }
+
   .wire-border::before {
     animation: none;
   }
