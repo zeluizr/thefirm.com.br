@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
-import { GitFork, Package, ScrollText } from 'lucide-react'
+import { Globe, ScrollText } from 'lucide-react'
 
 import { inView, reveal, stagger } from '~/lib/motion'
 
@@ -16,12 +16,11 @@ type FootLink = {
 }
 
 const footLinks: FootLink[] = [
-  { label: 'github', href: 'https://github.com/zeluizr', external: true, icon: GitFork },
   {
-    label: 'npm',
-    href: 'https://www.npmjs.com/~zeluizr',
+    label: 'zeluizr.com',
+    href: 'https://zeluizr.com',
     external: true,
-    icon: Package,
+    icon: Globe,
   },
 ]
 
