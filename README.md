@@ -6,8 +6,6 @@ Landing y manifiesto de _The Firm_: una marca que arrancó hace veinte años en 
 skate paulista y vuelve a rodar entre São Paulo y Santiago. El **Lab** revive los trabajos
 clásicos —la marca de skate, el cantor, los cracks del team— como prototipos en subdominios.
 
-[![último commit](https://badgen.net/github/last-commit/zeluizr/thefirm.com.br?label=último%20commit&color=ff41b4)](https://github.com/zeluizr/thefirm.com.br/commits)
-
 ---
 
 ## Stack
