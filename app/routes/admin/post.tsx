@@ -2,7 +2,7 @@ import { Form, Link, redirect } from 'react-router'
 
 import { db } from '@server/lib/db'
 import { requireAdmin } from '@server/lib/session'
-import { syncTelegram } from '@server/telegram/notify'
+import { notifyPost, syncTelegram } from '@server/telegram/notify'
 import { Markdown } from '~/components/Markdown'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -27,6 +27,16 @@ export async function action({ request, params }: Route.ActionArgs) {
   const form = await request.formData()
   const intent = String(form.get('intent'))
   const id = params.id
+
+  // reenvia uma preview nova pro Telegram (não mexe no status)
+  if (intent === 'renotify') {
+    try {
+      await notifyPost(id)
+      return { ok: true, message: 'reenviado pro Telegram ✓' }
+    } catch (e) {
+      return { error: `falha ao reenviar: ${(e as Error).message}` }
+    }
+  }
 
   switch (intent) {
     case 'publish':
@@ -70,7 +80,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'accent' | 'destr
   REJECTED: 'destructive',
 }
 
-export default function AdminPost({ loaderData }: Route.ComponentProps) {
+export default function AdminPost({ loaderData, actionData }: Route.ComponentProps) {
   const { post, categories, moderation } = loaderData
 
   return (
@@ -81,6 +91,17 @@ export default function AdminPost({ loaderData }: Route.ComponentProps) {
       >
         ← todos os posts
       </Link>
+
+      {actionData && 'error' in actionData && actionData.error && (
+        <div className="border-2 border-destructive bg-destructive/10 p-3 text-sm font-bold">
+          {actionData.error}
+        </div>
+      )}
+      {actionData && 'message' in actionData && actionData.message && (
+        <div className="border-2 border-border bg-secondary p-3 text-sm font-bold">
+          {actionData.message}
+        </div>
+      )}
 
       {/* ações */}
       <div className="brut flex flex-wrap items-center gap-2 p-4">
@@ -112,6 +133,12 @@ export default function AdminPost({ loaderData }: Route.ComponentProps) {
             </Button>
           </Form>
         )}
+        <Form method="post">
+          <input type="hidden" name="intent" value="renotify" />
+          <Button type="submit" variant="outline">
+            📨 reenviar pro Telegram
+          </Button>
+        </Form>
         <Form method="post" className="flex items-center gap-1">
           <input type="hidden" name="intent" value="recat" />
           <select
