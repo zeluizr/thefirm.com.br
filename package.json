@@ -9,6 +9,7 @@
     "typecheck": "react-router typegen && tsc",
     "cron": "tsx server/cron/daily.ts",
     "cron:dev": "node --env-file-if-exists=.env --import tsx server/cron/daily.ts",
+    "bot:dev": "node --env-file-if-exists=.env --import tsx server/telegram/poll.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",

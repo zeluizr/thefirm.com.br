@@ -2,6 +2,7 @@ import { Form, Link, redirect } from 'react-router'
 
 import { db } from '@server/lib/db'
 import { requireAdmin } from '@server/lib/session'
+import { syncTelegram } from '@server/telegram/notify'
 import { Markdown } from '~/components/Markdown'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -52,6 +53,12 @@ export async function action({ request, params }: Route.ActionArgs) {
     case 'delete':
       await db.post.delete({ where: { id } })
       throw redirect('/admin/posts')
+  }
+  // reflete a ação na mensagem do Telegram (se houver) — não derruba a ação se falhar
+  try {
+    await syncTelegram(id)
+  } catch {
+    /* ignora */
   }
   return { ok: true }
 }

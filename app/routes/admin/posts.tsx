@@ -2,6 +2,7 @@ import { Form, Link } from 'react-router'
 
 import { db } from '@server/lib/db'
 import { requireAdmin } from '@server/lib/session'
+import { syncTelegram } from '@server/telegram/notify'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import type { Route } from './+types/posts'
@@ -47,6 +48,13 @@ export async function action({ request }: Route.ActionArgs) {
         data: { categoryId: String(form.get('categoryId')) },
       })
       break
+  }
+  if (intent !== 'delete') {
+    try {
+      await syncTelegram(id)
+    } catch {
+      /* ignora */
+    }
   }
   return { ok: true }
 }
