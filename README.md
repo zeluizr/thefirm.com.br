@@ -72,13 +72,22 @@ Después, entrá a `/admin/settings` y cargá Gemini, Telegram y el cron secret.
 ## Desarrollo
 
 ```bash
-pnpm dev               # levanta el sitio + admin en http://localhost:3000
-pnpm cron:dev          # dispara el pipeline una vez (genera un post)
+pnpm dev               # levanta el sitio + admin en http://localhost:5173
+pnpm bot:dev           # 2º terminal: long polling, para que los botones del Telegram funcionen
 pnpm db:studio         # inspecciona la base con Prisma Studio
 ```
 
-El admin vive en `/admin` y solo deja entrar al email de `ADMIN_EMAIL`. Desde ahí podés
-generar un post a mano, gestionar categorías, editar la blocklist y revisar los logs.
+El admin vive en `/admin` y solo deja entrar al email de `ADMIN_EMAIL`. Desde ahí gestionás
+posts, categorías, blocklist, logs y la configuración. Para probar el flujo:
+
+1. **Panel → "forçar agora"** genera un post (texto + imagen + moderación) y lo manda al Telegram.
+2. Aprobás **desde el Telegram** (con `bot:dev` corriendo) o **desde el admin**: abrí el post en
+   **Posts**, leé el contenido completo y tocá **aprobar y publicar**.
+3. El post aparece en el sitio en `http://localhost:5173/`.
+
+> Los botones del Telegram necesitan algo escuchando los toques: en local es `pnpm bot:dev`;
+> en producción es el webhook (URL pública), sin proceso extra. El `chat_id`/`admin_id` del
+> Telegram es tu **id numérico de usuario** (te lo da @userinfobot), no el @username ni el id del bot.
 
 ## Producción
 
@@ -110,14 +119,14 @@ app/                  # React Router: sitio público + admin
   components/         # UI brutalista + primitivos shadcn
   lib/                # utils, cliente de auth
 server/               # lógica de servidor (fuera del bundle del cliente)
-  lib/                # db, env, gemini, storage, auth, slug
+  lib/                # db, env, gemini, config cifrada (crypto), storage, auth, slug
   generator/          # generación de texto + prompt versionado
   moderation/         # doble filtro (safety + clasificador)
   media/              # imagen (Nano Banana) y video (Veo)
-  telegram/           # bot, notify y formato de mensajes
+  telegram/           # bot, notify, formato y poll (bot:dev)
   pipeline/           # orquestación diaria (1 post/día por LRU)
   cron/               # entrypoint del cron standalone
-prisma/               # schema + seed
+prisma/               # schema + migrations + seed
 ```
 
 _Hecho con amor y café por [zeluizr](https://github.com/zeluizr) y con la ayuda de [Claude](https://claude.ai/referral/Cz_UimA0NQ) ☕_

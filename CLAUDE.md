@@ -1,44 +1,43 @@
 # CLAUDE.md — fagulha
 
-> Motor de conteúdo diário auto-gerado para **thefirm.com.br**.
-> Gera posts por categoria todo dia, ilustra com imagem (e vídeo opcional) lúdicos,
-> passa por gate de moderação, e só publica depois de aprovação manual via Telegram.
-> Codinome sugerido: **fagulha** (renomeie à vontade).
+> Motor de conteúdo diário autogerado para **thefirm.com.br**.
+> Gera 1 post/dia por categoria (rotação LRU), ilustra, passa por moderação dupla
+> e **só publica depois de aprovação manual** via Telegram ou admin.
+> Provedor único: **Google Gemini** (texto, imagem, vídeo e moderação).
+>
+> Este arquivo descreve o sistema **como implementado**. Histórico em `CHANGELOG.md`.
 
 ---
 
-## 0. Convenções inegociáveis (aplicar em todo o projeto)
+## 0. Convenções inegociáveis
 
-- **TypeScript strict + ESM** em tudo.
-- **pnpm** como package manager.
-- **Prisma** como ORM — sempre. Nunca Drizzle nem outro.
-- **React Router v7** framework mode (não Remix legacy, não Next).
-- **TailwindCSS v4** CSS-first. **shadcn/ui** preset Vega com cores oklch.
-- **Better Auth** para autenticação.
-- **Railway + Docker** para deploy. Postgres direto no Railway (sem Supabase).
-- Estilo de código: **sem ponto e vírgula, aspas simples, trailing commas**.
-- Commits: **Conventional Commits em inglês**.
-- Idioma dos posts: **pt-BR** por padrão (constante `POST_LANGUAGE`, trocável).
+- **TypeScript strict + ESM**. **pnpm**. **Prisma** como ORM (nunca outro).
+- **React Router v7** framework mode (não Remix, não Next). **TailwindCSS v4** CSS-first +
+  **shadcn/ui** com cores **oklch**. **Better Auth** pra autenticação.
+- **Railway + Docker** pra deploy. Postgres direto no Railway (sem Supabase).
+- Estilo: **sem ponto e vírgula, aspas simples, trailing commas**, 2 espaços.
+- Commits: **Conventional Commits em inglês**. Posts em **pt-BR** (`POST_LANGUAGE`).
 
 ---
 
-## 1. O que o sistema faz (visão geral)
+## 1. Como funciona
 
 ```
-cron diário (Railway)
-  └─ para cada categoria habilitada:
-       1. GERA texto (LLM barato via Dante) com blocklist como restrição negativa
-       2. MODERA (gate duplo): OpenAI Moderation API (grátis) + classificador LLM (JSON)
-       3. se passar → GERA imagem lúdica (Gemini Imagen)
-       4. se a categoria/post pedir vídeo → enfileira fal.ai (async, Kling) → webhook
-       5. grava Post como PENDING_REVIEW
-       6. envia ao Telegram: preview + botões [Aprovar] [Rejeitar] [Trocar categoria]
-  └─ webhook Telegram: toque em Aprovar → status PUBLISHED → aparece no site
-  └─ webhook fal.ai: vídeo pronto → anexa ao post → atualiza msg no Telegram
+cron diário (Railway Cron → POST /api/cron/daily, protegido por CRON_SECRET)
+  └─ escolhe UMA categoria: habilitada, menos recente (lastPostedAt asc, nulls first)
+  └─ idempotência: se já há post criado hoje, não gera de novo
+       1. GERA texto (Gemini, JSON forçado) com a blocklist como restrição
+       2. MODERA: gate 1 (safety da geração) + gate 2 (classificador Gemini)
+       3. cria Post como GENERATING_MEDIA, set category.lastPostedAt = now()
+       4. ILUSTRA (Nano Banana via generateContent → bytes inlineData)
+       5. se category.videoEnabled → Veo + polling (inline, teto 5 min)
+       6. status → PENDING_REVIEW e NOTIFICA no Telegram
+  └─ aprovação: botão do Telegram OU /admin → status PUBLISHED → aparece no site
 ```
 
-**Princípio de segurança:** o site é público, então NADA é publicado sem o toque manual
-de aprovação. A moderação automática é só pré-filtro — a aprovação humana é a válvula real.
+A geração roda **dentro do web service** (não num cron service à parte) porque a mídia é
+gravada em disco e o Railway Volume não é compartilhado entre serviços. O Railway Cron só
+dispara o endpoint HTTP.
 
 ---
 
@@ -46,312 +45,116 @@ de aprovação. A moderação automática é só pré-filtro — a aprovação h
 
 | Função | Provedor | Notas |
 |---|---|---|
-| Geração de texto | Anthropic Haiku via **Dante** (router) | barato, fallback OpenAI já existe no Dante |
-| Moderação 1 | **OpenAI Moderation API** | grátis, scores por categoria |
-| Moderação 2 | classificador LLM via Dante | retorna JSON `{ approved, reason }` |
-| Imagem | **Gemini Imagen** | mesmo provider do pluma, estilo lúdico |
-| Vídeo (opcional) | **fal.ai** (Kling 3.0 default) | async + webhook, troca de modelo por parâmetro |
-| Notificação/aprovação | **Telegram Bot** (grammY) | inline keyboard, webhook mode |
+| Texto + classificador | **Gemini** `gemini-flash-latest` | `generateContent`, `responseMimeType: application/json` |
+| Imagem | **Gemini** `gemini-3.1-flash-image` (Nano Banana) | `generateContent`, bytes em `inlineData` (NÃO `generateImages`) |
+| Vídeo (opt-in) | **Gemini** `veo-3.1-fast-generate-preview` | `generateVideos` + polling |
+| Moderação | **Gemini** | gate 1 = `STRICT_SAFETY` em toda chamada; gate 2 = classificador JSON |
+| Notificação/aprovação | **Telegram Bot** (grammY) | inline keyboard, webhook em prod / `bot:dev` (polling) no local |
 
-> Não usar Sora: API com desligamento previsto. fal.ai abstrai o modelo de vídeo;
-> default Kling 3.0 (~$0.10/seg). Vídeo é opt-in por categoria/post — imagem é o padrão.
-
----
-
-## 3. Categorias iniciais (seed)
-
-`IA`, `JavaScript`, `VTEX`, `React`, `React Router`, `React Native`, `Cloud`, `Skate`,
-`Música` (foco Rock inicialmente), `Video Game`, `Arduino` (robótica em geral).
-
-Cada categoria é uma linha editável pelo admin (habilitar/desabilitar, dicas de prompt,
-ligar/desligar vídeo). Adicionar/remover categoria NÃO exige mexer em código.
+> IDs de modelo mudam rápido — confirme em https://ai.google.dev/gemini-api/docs/models.
+> São override-áveis por env/DB. Vídeo desligado em todas as categorias por padrão (Veo é o
+> único item caro). Imagem ~US$0,04–0,05; texto frações de centavo.
 
 ---
 
-## 4. Schema Prisma (base)
+## 3. Estrutura
 
-```prisma
-enum PostStatus {
-  GENERATING_MEDIA
-  PENDING_REVIEW
-  PUBLISHED
-  REJECTED
-}
-
-model Category {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  name         String
-  enabled      Boolean  @default(true)
-  videoEnabled Boolean  @default(false)
-  promptHints  String?  // dicas de tom/tema injetadas no prompt do gerador
-  language     String   @default('pt-BR')
-  posts        Post[]
-  createdAt    DateTime @default(now())
-}
-
-model BlocklistTerm {
-  id        String   @id @default(cuid())
-  value     String   @unique
-  kind      String   @default('term') // 'term' | 'theme'
-  createdAt DateTime @default(now())
-}
-
-model Post {
-  id                String     @id @default(cuid())
-  category          Category   @relation(fields: [categoryId], references: [id])
-  categoryId        String
-  title             String
-  slug              String     @unique
-  summary           String
-  body              String     // markdown
-  imagePrompt       String?
-  imageUrl          String?
-  videoUrl          String?
-  status            PostStatus @default(PENDING_REVIEW)
-  moderationScores  Json?
-  moderationReason  String?
-  generatorVersion  String     // versão do prompt do gerador (auditoria)
-  telegramMessageId String?
-  createdAt         DateTime   @default(now())
-  publishedAt       DateTime?
-}
-
-model GenerationLog {
-  id         String   @id @default(cuid())
-  postId     String?
-  category   String
-  model      String
-  version    String
-  rawOutput  String
-  createdAt  DateTime @default(now())
-}
-
-model ModerationLog {
-  id        String   @id @default(cuid())
-  postId    String
-  provider  String   // 'openai' | 'llm'
-  scores    Json
-  passed    Boolean
-  createdAt DateTime @default(now())
-}
-
-// + tabelas geradas pelo adapter do Better Auth
+```
+app/                       # React Router: site público + admin
+  routes/
+    home.tsx, post.tsx     # site público (só PUBLISHED)
+    login.tsx, setup.tsx   # login Google + bootstrap (pré-login)
+    uploads.$.tsx          # serve a mídia de MEDIA_DIR
+    api.auth.$.tsx         # Better Auth handler
+    api.webhooks.telegram.tsx  # webhook do Telegram (prod)
+    api.cron.daily.tsx     # dispara o pipeline (Railway Cron chama)
+    admin/                 # layout + index(painel) + posts + post(:id) +
+                           #   categories + blocklist + logs + settings
+  components/ (ui shadcn, Markdown, SiteHeader)
+  lib/ (utils, auth-client)
+server/                    # lógica de servidor (fora do bundle do cliente)
+  lib/  db, env, gemini, config(+spec), crypto, storage, slug, constants, json, auth, session
+  generator/  generate.ts + prompt.ts
+  moderation/ classifier.ts + prompt.ts + index.ts (gates + logs)
+  media/      image.ts (Nano Banana) + video.ts (Veo)
+  telegram/   bot.ts + notify.ts + format.ts + poll.ts (bot:dev)
+  pipeline/   run.ts (orquestração diária / forçar agora)
+  cron/       daily.ts (entrypoint standalone alternativo)
+  queries.ts  (queries do site público)
+prisma/  schema.prisma + migrations + seed.ts
 ```
 
+Imports: dentro de `app/` use `~/*`; de `app/` pra `server/` use `@server/*`; dentro de
+`server/` use caminhos relativos (o cron via tsx não depende de alias).
+
 ---
 
-## 5. Pipeline diário (cron)
+## 4. Config em dois níveis (importante)
 
-Entrypoint separado rodado pelo **Railway Cron** (não dentro do server web).
-Sugestão: `0 12 * * *` (≈ 09:00 Santiago). Script `server/cron/daily.ts`.
+Segredos partidos por necessidade de segurança (alguns são precisos **antes** do login):
 
-Para cada categoria habilitada, em sequência:
+- **Bootstrap (`.env`)**: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFIG_ENCRYPTION_KEY`,
+  `GOOGLE_CLIENT_ID/SECRET`, `ADMIN_EMAIL`, `APP_URL` (auto-resolve via `RAILWAY_PUBLIC_DOMAIN`).
+  Status/instruções na página pública **`/setup`**.
+- **Operacional (banco, cifrado AES-256-GCM)**: `GEMINI_API_KEY`, tokens do Telegram,
+  `CRON_SECRET`, IDs de modelo, `POST_LANGUAGE`. Editados em **`/admin/settings`**.
 
-1. **Gerar texto** — `server/generator/generate.ts`. Chama Dante com o system prompt
-   da seção 7, passando `category.name`, `category.promptHints`, `POST_LANGUAGE` e a
-   blocklist atual. Espera JSON estrito: `{ title, summary, body, tags, imagePrompt }`.
-   Gravar `GenerationLog` com a versão do prompt.
+NÃO leia segredos operacionais de `process.env` direto — use `runtimeConfig()`
+(`server/lib/config.ts`, banco decifrado > env, cache invalidado a cada escrita).
+`GOOGLE_CLIENT_*` (login) é OAuth, **diferente** de `GEMINI_API_KEY` (API generativa).
 
-2. **Moderar (gate duplo)** — `server/moderation/`:
-   - `openai.ts`: roda Moderation API sobre `title + summary + body`. Se qualquer
-     categoria passar do threshold (`MODERATION_THRESHOLD = 0.5`), marca `REJECTED`,
-     loga, e pula. (não vai nem pro Telegram)
-   - `classifier.ts`: segunda passada via Dante, prompt da seção 7.2, retorna
-     `{ approved: boolean, reason: string }`. Se `approved === false`, `REJECTED` + log.
-   - Gravar `ModerationLog` para cada provider.
+---
 
-3. **Gerar imagem** — `server/media/image.ts`. Gemini Imagen, prompt = `imagePrompt`
-   embrulhado pelo `LUDIC_IMAGE_STYLE` (seção 7.3). Salva `imageUrl`.
+## 5. Rodar localmente
 
-4. **Vídeo (se `category.videoEnabled`)** — `server/media/video.ts`. Cria o post como
-   `GENERATING_MEDIA`, dispara fal.ai async (Kling 3.0) com `LUDIC_VIDEO_STYLE`, passando
-   `webhookUrl = APP_URL + '/api/webhooks/fal'`. O post só vai pro Telegram quando o
-   vídeo voltar. Sem vídeo: cria direto como `PENDING_REVIEW`.
-
-5. **Notificar** — `server/telegram/notify.ts`. Envia a `TELEGRAM_CHAT_ID` (teu) a
-   imagem/vídeo como preview + caption (title + summary + categoria) + inline keyboard:
-
-```ts
-const keyboard = {
-  inline_keyboard: [[
-    { text: '✅ Aprovar', callback_data: `approve:${post.id}` },
-    { text: '🗑️ Rejeitar', callback_data: `reject:${post.id}` },
-  ], [
-    { text: '🔁 Trocar categoria', callback_data: `recat:${post.id}` },
-  ]],
-}
+```bash
+docker run -d --name fagulha-pg -e POSTGRES_USER=user -e POSTGRES_PASSWORD=pass \
+  -e POSTGRES_DB=fagulha -p 5434:5432 postgres:16-alpine     # 5432/5433 podem estar ocupadas
+cp .env.example .env        # preencha só o bloco de bootstrap (openssl rand p/ os secrets)
+pnpm install
+pnpm exec prisma migrate dev && pnpm exec prisma db seed
+pnpm dev                    # Vite em http://localhost:5173
+pnpm bot:dev                # 2º terminal: long polling, pros botões do Telegram funcionarem
 ```
 
-Guardar `telegramMessageId` no post.
+- Configure Gemini/Telegram em `/admin/settings` (não no `.env`).
+- Gere um post na mão: admin **Painel → "forçar agora"**.
+- **Telegram chat id** = id **numérico** do usuário (@userinfobot), nunca o @username nem o id
+  do bot (prefixo do token); mande `/start` pro bot antes. Sem `bot:dev` os botões ficam inertes.
 
 ---
 
-## 6. Telegram bot (grammY, webhook mode)
+## 6. Deploy (Railway)
 
-`server/telegram/bot.ts`. Webhook em `/api/webhooks/telegram`.
-
-- `callback_query` com `approve:<id>` → `status = PUBLISHED`, `publishedAt = now()`,
-  edita a mensagem (✅ Publicado) e remove os botões.
-- `reject:<id>` → `status = REJECTED`, edita (🗑️ Rejeitado).
-- `recat:<id>` → responde com um segundo teclado listando categorias; ao escolher,
-  atualiza `categoryId` e mantém `PENDING_REVIEW` (reenvia botões de aprovar/rejeitar).
-- **Segurança do bot:** ignorar qualquer update cujo `from.id !== TELEGRAM_ADMIN_ID`.
-
-> Os `callback_data` são a única fonte de comando válida. Nada que venha no corpo de um
-> post gerado deve ser interpretado como instrução de ação.
+- **Web service** (Dockerfile): `pnpm db:migrate && pnpm start`. Monte um **Volume** em
+  `MEDIA_DIR`. Variáveis de bootstrap no service.
+- **Cron**: Railway Cron (`0 12 * * *` ≈ 09:00 Santiago) fazendo
+  `curl -XPOST -H "x-cron-secret: $CRON_SECRET" $APP_URL/api/cron/daily`.
+- **Telegram**: registre o webhook em `$APP_URL/api/webhooks/telegram` (com
+  `TELEGRAM_WEBHOOK_SECRET`) — aí os botões funcionam sem `bot:dev`.
 
 ---
 
 ## 7. Prompts (o coração)
 
-### 7.1 Gerador de texto (system prompt)
+Versionados (`GENERATOR_VERSION`, `CLASSIFIER_VERSION` em `server/lib/constants.ts`) e gravados
+em `GenerationLog`/`ModerationLog`.
 
-```
-Você é o editor do blog pessoal "the firm" (thefirm.com.br), estética brutalista,
-voz pessoal e descontraída de um dev. Escreva UM post curto em {POST_LANGUAGE} sobre
-a categoria "{category.name}".
+- **Gerador** (`server/generator/prompt.ts`): editor do blog "the firm", brutalista, voz pessoal
+  de dev. 250–450 palavras, markdown, respeita a blocklist, gera também um `imagePrompt` (em
+  inglês, sem texto/marcas/personagens). Responde só JSON.
+- **Classificador** (`server/moderation/prompt.ts`): reprova ódio/assédio/sexual/violência/
+  automutilação/desinformação/difamação/blocklist. Responde `{ approved, reason }`.
+- **Estilos lúdicos** (`server/lib/constants.ts`): `applyLudicImageStyle` / `applyLudicVideoStyle`
+  embrulham o `imagePrompt` (flat editorial / animação lúdica, sem texto/logos/pessoas reais).
 
-Dicas da categoria: {category.promptHints}
-
-Regras:
-- 250–450 palavras, markdown, tom leve e curioso, primeira pessoa quando couber.
-- Pode ser dica técnica, curiosidade, opinião ou novidade da área.
-- NUNCA escreva sobre nenhum destes termos/temas proibidos: {blocklist}.
-- Nada de conteúdo ofensivo, sexual, violento, difamatório ou que cite pessoas reais
-  de forma negativa.
-- Gere também um "imagePrompt": descrição visual lúdica e divertida da cena (em inglês),
-  SEM texto na imagem, SEM marcas/logos/personagens protegidos.
-
-Responda APENAS com JSON, sem markdown, sem cercas:
-{ "title": "...", "summary": "...", "body": "...", "tags": ["..."], "imagePrompt": "..." }
-```
-
-Versionar este prompt (`GENERATOR_VERSION = 'v1'`) e gravar em cada `GenerationLog`.
-
-### 7.2 Classificador de moderação (system prompt)
-
-```
-Você é um moderador. Avalie se o post abaixo é seguro para publicação pública num blog
-de tecnologia e cultura. Reprove se houver: ódio, assédio, conteúdo sexual, violência
-gráfica, automutilação, desinformação perigosa, difamação de pessoa real, ou qualquer
-tema da blocklist: {blocklist}.
-
-Responda APENAS com JSON: { "approved": true|false, "reason": "..." }
-
-Post:
-{title}
-{body}
-```
-
-### 7.3 Estilo lúdico de imagem (sufixo fixo)
-
-```
-LUDIC_IMAGE_STYLE =
-"{imagePrompt}, playful flat editorial illustration, vibrant saturated colors, bold
-shapes, whimsical and friendly, soft shadows, clean vector look, no text, no logos,
-no real people, no copyrighted characters"
-```
-
-### 7.4 Estilo lúdico de vídeo (sufixo fixo)
-
-```
-LUDIC_VIDEO_STYLE =
-"{imagePrompt}, playful animated illustration style, vibrant colors, smooth bouncy
-motion, whimsical, 5 seconds, no text, no logos, no real people"
-```
+Parsing do JSON do LLM é tolerante (`server/lib/json.ts`): extrai o primeiro objeto `{...}`
+balanceado, tolerando `}` extra e blocos de código no corpo.
 
 ---
 
-## 8. Site público (React Router v7)
+## 8. Princípio de segurança
 
-- Lista de posts `PUBLISHED`, mais recentes primeiro, com filtro por categoria.
-- Página de post: título, imagem/vídeo no topo, corpo (markdown renderizado), categoria, data.
-- Estética **brutalista** coerente com o the firm revival 2007 (bordas duras, mono/grotesk,
-  alto contraste). Tailwind v4 + tokens oklch.
-- Apenas leitura. Nenhuma rota pública dispara geração nem expõe posts não publicados.
-- **Decisão em aberto:** montar na raiz `/` ou em `/blog` (constante `BASE_PATH`).
-  Default: raiz. Ajustar se o portfólio do the firm precisar conviver.
-
----
-
-## 9. Admin (travado num único email)
-
-Rotas sob `/admin`, protegidas por **Better Auth** com provider **Google**.
-Allowlist de UM email no callback de login:
-
-```ts
-// better-auth config
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL // 'zeluizr@commente.me'
-
-callbacks: {
-  async signIn({ user }) {
-    return user.email === ADMIN_EMAIL // qualquer outra conta Google é rejeitada
-  },
-}
-```
-
-Telas do admin:
-
-- **Posts:** todos os estados; ações deletar, trocar categoria, publicar/despublicar manual.
-- **Categorias:** habilitar/desabilitar, editar `promptHints`, ligar/desligar vídeo.
-- **Blocklist:** adicionar/remover termos e temas proibidos.
-- **Logs:** ver `GenerationLog` e `ModerationLog` (auditoria do que escapou e por quê).
-
-Nada de cadastro aberto. Nenhum outro provider de auth.
-
----
-
-## 10. Variáveis de ambiente
-
-```
-DATABASE_URL=
-APP_URL=                 # ex. https://thefirm.com.br
-POST_LANGUAGE=pt-BR
-
-# IA (via Dante; ou direto)
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=          # também usado na Moderation API
-GOOGLE_AI_API_KEY=       # Gemini Imagen
-FAL_KEY=                 # fal.ai vídeo
-
-# Auth
-BETTER_AUTH_SECRET=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-ADMIN_EMAIL=zeluizr@commente.me
-
-# Telegram
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=        # teu chat (destino das notificações)
-TELEGRAM_ADMIN_ID=       # teu user id (filtro de quem pode apertar botão)
-```
-
----
-
-## 11. Tarefas para o Claude Code (ordem sugerida)
-
-1. Scaffold RRv7 framework mode + Tailwind v4 + shadcn (Vega/oklch) + Prisma + Better Auth.
-2. Schema Prisma (seção 4) + migration + seed das categorias (seção 3).
-3. Dante client wrapper (`server/lib/dante.ts`) para texto e classificador.
-4. Gerador (`server/generator/`) com prompt versionado + parsing JSON robusto.
-5. Moderação dupla (`server/moderation/`) + logs.
-6. Mídia: imagem (Imagen) e vídeo (fal.ai async + webhook `/api/webhooks/fal`).
-7. Telegram bot (grammY) + notify + webhook `/api/webhooks/telegram` com filtro de admin.
-8. Cron entrypoint (`server/cron/daily.ts`) amarrando o pipeline.
-9. Site público (lista + post + filtro de categoria) brutalista.
-10. Admin travado no email (posts, categorias, blocklist, logs).
-11. Dockerfile + config Railway (web service + cron service).
-
----
-
-## 12. Notas de robustez
-
-- Parsing de JSON do LLM: sempre tolerante (strip de cercas ```` ```json ````, try/catch,
-  e em falha → marca o post como erro e loga, não derruba o cron).
-- Idempotência do cron: não gerar duas vezes a mesma categoria no mesmo dia.
-- fal.ai: timeout/retry; se o vídeo falhar, cair pra imagem e notificar mesmo assim.
-- Custo: imagem é centavos; vídeo só nas categorias com `videoEnabled`. Comece com vídeo
-  desligado em todas e ligue uma ou duas pra testar.
-
-```
+O site é público, então **nada é publicado sem o toque manual de aprovação**. A moderação
+automática é só pré-filtro. Só o `callback_data` do Telegram (validado pelo admin id) ou as
+ações do admin (Better Auth, 1 email) disparam mudança de status — nunca o conteúdo gerado.
