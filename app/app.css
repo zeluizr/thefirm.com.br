@@ -1,62 +1,76 @@
 @import 'tailwindcss';
 
-@theme {
-  /* canvas — preto-arroxeado (ecoa el #2a212c de integram, no negro puro) */
-  --color-void: #15101b;
-  --color-void-2: #1c1526;
-  --color-void-3: #271c33;
+@custom-variant dark (&:is(.dark *));
 
-  /* texto — conserva el calor crema de la marca */
-  --color-bone: #efeadd;
-  --color-bone-dim: #a79ea8;
+/*
+ * the firm — estética brutalista (revival 2007).
+ * bordas duras, alto contraste, grotesk + mono, cores oklch.
+ * tokens no padrão shadcn/ui (preset Vega) para compor com os primitivos.
+ */
+:root {
+  --radius: 0rem;
 
-  /* marca integram.me — morado + magenta */
-  --color-purple: #a463f2;
-  --color-purple-deep: #6e2fba;
-  --color-purple-soft: #bc92f5;
-  --color-magenta: #ff41b4;
-  --color-magenta-soft: #f97dcf;
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.16 0 0);
 
-  /* tinta real, para sellos puntuales sobre acento claro */
-  --color-ink: #141414;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
 
-  --font-display: 'Archivo Black', sans-serif;
-  --font-body: 'Space Grotesk', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
 
-  /* sombras duras ahora eléctricas */
-  --shadow-hard: 7px 7px 0 #ff41b4;
-  --shadow-hard-sm: 4px 4px 0 #ff41b4;
-  --shadow-hard-purple: 7px 7px 0 #a463f2;
+  --primary: oklch(0.16 0 0);
+  --primary-foreground: oklch(0.98 0 0);
 
-  /* single breakpoint mirrors the reference @media (max-width: 720px):
-     base styles are mobile, `bp:` (>=721px) restores the desktop layout */
-  --breakpoint-bp: 721px;
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.16 0 0);
+
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+
+  --accent: oklch(0.72 0.19 50);
+  --accent-foreground: oklch(0.16 0 0);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.16 0 0);
+  --input: oklch(0.16 0 0);
+  --ring: oklch(0.72 0.19 50);
+
+  --spark: oklch(0.72 0.19 50);
 }
 
-/* ── shadcn/ui tokens (admin panel) — themed to The Firm's dark palette ────── */
-:root {
-  --radius: 0.625rem;
+.dark {
+  --background: oklch(0.16 0 0);
+  --foreground: oklch(0.98 0 0);
 
-  --background: #15101b;
-  --foreground: #efeadd;
-  --card: #1c1526;
-  --card-foreground: #efeadd;
-  --popover: #1c1526;
-  --popover-foreground: #efeadd;
-  --primary: #a463f2;
-  --primary-foreground: #15101b;
-  --secondary: #271c33;
-  --secondary-foreground: #efeadd;
-  --muted: #271c33;
-  --muted-foreground: #a79ea8;
-  --accent: #ff41b4;
-  --accent-foreground: #15101b;
-  --destructive: #fb5a73;
-  --destructive-foreground: #15101b;
-  --border: #2f2440;
-  --input: #2f2440;
-  --ring: #a463f2;
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.98 0 0);
+
+  --popover: oklch(0.2 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+
+  --primary: oklch(0.98 0 0);
+  --primary-foreground: oklch(0.16 0 0);
+
+  --secondary: oklch(0.27 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  --muted: oklch(0.27 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+
+  --accent: oklch(0.72 0.19 50);
+  --accent-foreground: oklch(0.16 0 0);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.98 0 0);
+  --input: oklch(0.98 0 0);
+  --ring: oklch(0.72 0.19 50);
+
+  --spark: oklch(0.72 0.19 50);
 }
 
 @theme inline {
@@ -79,194 +93,85 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-spark: var(--spark);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
+  --radius-xl: var(--radius);
 
-/* outline number used by the eras (void fill + bone stroke) */
-@utility text-stroke-bone {
-  -webkit-text-stroke: 2.5px var(--color-bone);
-}
-
-/* texto rellenado con el degradado de marca (morado → magenta) */
-@utility text-wire {
-  background: linear-gradient(120deg, var(--color-purple), var(--color-magenta));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  * {
+    @apply border-border;
   }
-
   body {
-    background-color: var(--color-void);
-    /* rejilla tenue tipo blueprint — guiño al grid de integram.me */
-    background-image:
-      linear-gradient(90deg, #efeadd0a 1px, transparent 1px),
-      linear-gradient(#efeadd0a 1px, transparent 1px);
-    background-size: 64px 64px;
-    color: var(--color-bone);
-    font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    @apply bg-background text-foreground font-sans antialiased;
   }
-
-  @media (min-width: 721px) {
-    body {
-      font-size: 18px;
-    }
-  }
-
-  a {
-    color: inherit;
-  }
-
   ::selection {
-    background: var(--color-magenta);
-    color: var(--color-void);
-  }
-
-  :focus-visible {
-    outline: 3px solid var(--color-magenta);
-    outline-offset: 2px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
+    background: var(--spark);
+    color: var(--foreground);
   }
 }
 
-/* ── firma punk: borde de degradado animado (truco de máscara, como integram) ── */
 @layer components {
-  .wire-border {
-    position: relative;
-    isolation: isolate;
+  /* caixa brutalista: borda dura + sombra deslocada */
+  .brut {
+    @apply border-2 border-border bg-card;
+    box-shadow: 4px 4px 0 0 var(--border);
+  }
+  .brut-hover {
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .brut-hover:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 var(--border);
   }
 
-  .wire-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    padding: 3px;
-    background: linear-gradient(
-      120deg,
-      var(--color-purple),
-      var(--color-magenta),
-      var(--color-purple)
-    );
-    background-size: 200% 200%;
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: wire-pan 4s linear infinite;
-    pointer-events: none;
+  /* corpo markdown do post — sem plugin typography */
+  .md {
+    @apply text-base leading-relaxed;
   }
-
-  /* censura tipo zine: una barra opaca tapa el texto hasta que se pasa el
-     mouse, se enfoca con teclado o se toca (data-open). el texto sigue en el
-     DOM, así que lectores de pantalla igual lo anuncian */
-  .spoiler {
-    --spoiler-bar: currentColor;
-    position: relative;
-    display: inline-block;
-    max-width: 100%;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-    text-align: inherit;
-    background: none;
-    border: 0;
-    padding: 0 0.14em;
+  .md > * + * {
+    @apply mt-4;
   }
-
-  .spoiler::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--spoiler-bar);
-    transition: opacity 0.18s ease;
+  .md h1 {
+    @apply mt-8 text-3xl font-bold tracking-tight;
   }
-
-  .spoiler:hover::after,
-  .spoiler:focus-visible::after,
-  .spoiler[data-open='true']::after {
-    opacity: 0;
-    pointer-events: none;
+  .md h2 {
+    @apply mt-8 text-2xl font-bold tracking-tight;
   }
-
-  .spoiler--magenta {
-    --spoiler-bar: var(--color-magenta);
+  .md h3 {
+    @apply mt-6 text-xl font-bold tracking-tight;
   }
-
-  .spoiler--block {
-    display: block;
+  .md a {
+    @apply font-bold underline decoration-2 underline-offset-2;
   }
-
-  /* RGB-split al hacer hover/focus sobre los títulos display */
-  .glitch {
-    position: relative;
+  .md ul {
+    @apply list-disc pl-6;
   }
-
-  .glitch:hover,
-  .glitch:focus-visible {
-    animation: glitch-shake 0.3s steps(2, end) 1;
-    text-shadow:
-      0.045em 0 0 var(--color-magenta),
-      -0.045em 0 0 var(--color-purple);
+  .md ol {
+    @apply list-decimal pl-6;
   }
-}
-
-@keyframes wire-pan {
-  to {
-    background-position: 200% 50%;
+  .md li + li {
+    @apply mt-1;
   }
-}
-
-@keyframes glitch-shake {
-  0% {
-    transform: translate(0, 0);
+  .md blockquote {
+    @apply border-l-4 border-border bg-secondary px-4 py-2 italic;
   }
-  25% {
-    transform: translate(-2px, 1px);
+  .md code {
+    @apply border border-border bg-secondary px-1 py-0.5 font-mono text-sm;
   }
-  50% {
-    transform: translate(2px, -1px);
+  .md pre {
+    @apply overflow-x-auto border-2 border-border bg-card p-4 font-mono text-sm;
   }
-  75% {
-    transform: translate(-1px, -1px);
+  .md pre code {
+    @apply border-0 bg-transparent p-0;
   }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spoiler::after {
-    transition: none;
-  }
-
-  .wire-border::before {
-    animation: none;
-  }
-
-  /* conserva el split cromático, sin sacudida */
-  .glitch:hover,
-  .glitch:focus-visible {
-    animation: none;
-    text-shadow:
-      0.03em 0 0 var(--color-magenta),
-      -0.03em 0 0 var(--color-purple);
+  .md img {
+    @apply border-2 border-border;
   }
 }

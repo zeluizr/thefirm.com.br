@@ -1,0 +1,11 @@
+node_modules
+.git
+.react-router
+build
+.cache
+.env
+.env.*
+!.env.example
+.DS_Store
+data
+README.md

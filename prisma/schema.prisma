@@ -1,0 +1,149 @@
+// fagulha — motor de conteúdo diário de thefirm.com.br
+// Provedor único: Google Gemini (texto, imagem, vídeo + moderação).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostStatus {
+  GENERATING_MEDIA
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+model Category {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  name         String
+  enabled      Boolean   @default(true)
+  videoEnabled Boolean   @default(false)
+  promptHints  String? // dicas de tom/tema injetadas no prompt do gerador
+  language     String    @default("pt-BR")
+  lastPostedAt DateTime? // LRU: cron escolhe a habilitada menos recente
+  posts        Post[]
+  createdAt    DateTime  @default(now())
+
+  @@index([enabled, lastPostedAt])
+}
+
+model BlocklistTerm {
+  id        String   @id @default(cuid())
+  value     String   @unique
+  kind      String   @default("term") // 'term' | 'theme'
+  createdAt DateTime @default(now())
+}
+
+model Post {
+  id                String     @id @default(cuid())
+  category          Category   @relation(fields: [categoryId], references: [id])
+  categoryId        String
+  title             String
+  slug              String     @unique
+  summary           String
+  body              String // markdown
+  tags              String[]   @default([])
+  imagePrompt       String?
+  imageUrl          String?
+  videoUrl          String?
+  status            PostStatus @default(PENDING_REVIEW)
+  moderationScores  Json?
+  moderationReason  String?
+  generatorVersion  String // versão do prompt do gerador (auditoria)
+  telegramMessageId String?
+  createdAt         DateTime   @default(now())
+  publishedAt       DateTime?
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([createdAt])
+}
+
+model GenerationLog {
+  id        String   @id @default(cuid())
+  postId    String?
+  category  String
+  model     String
+  version   String
+  rawOutput String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model ModerationLog {
+  id        String   @id @default(cuid())
+  postId    String
+  provider  String // 'gemini-safety' | 'gemini-classifier'
+  scores    Json
+  passed    Boolean
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+}
+
+// config operacional editável pelo admin. value = ciphertext AES-256-GCM (base64).
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth (Google OAuth, allowlist de 1 email). Modelos no padrão esperado.
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

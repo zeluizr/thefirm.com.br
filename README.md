@@ -1,181 +1,132 @@
-![the firm](.github/cover.png)
+# the firm
 
-**The Firm Social Publisher — un estudio editorial privado para publicar imagen o video con leyenda en X, Instagram, Facebook Page y Threads, usando las APIs oficiales.**
+**Motor de contenido diario autogenerado para thefirm.com.br** (nombre en clave: _fagulha_).
 
-No es un blog. No es un CMS. La unidad es **media + leyenda + plataformas + estado**, firmada por la persona _O Outro José_. El frontend público cuenta el concepto; el panel privado crea las piezas, sube la media, agenda y publica.
+Cada día genera un post de una categoría con Google Gemini —texto, imagen y, opcional, video—,
+lo pasa por un doble filtro de moderación y lo deja en revisión. Nada se publica en el sitio
+público sin un toque manual de aprobación por Telegram.
 
----
+## Cómo funciona
+
+```
+cron diario → elige UNA categoría (la menos reciente)
+  1. genera el texto (Gemini) con la blocklist como restricción
+  2. modera: safety settings del modelo + clasificador Gemini
+  3. genera la imagen lúdica (Nano Banana)
+  4. si la categoría lo pide, genera el video (Veo, con polling)
+  5. guarda el post como PENDING_REVIEW y avisa por Telegram
+     con botones [Aprobar] [Rechazar] [Cambiar categoría]
+  6. al tocar Aprobar → PUBLISHED → aparece en el sitio
+```
+
+La moderación automática es solo un prefiltro: la aprobación humana por Telegram es la válvula
+real. El sitio público es de solo lectura y nunca expone posts no publicados.
 
 ## Stack
 
-- **React Router 7** — framework mode con SSR
-- **TypeScript** + **Vite**
-- **Tailwind CSS 4** — tokens (morado → magenta) en `app/app.css`
-- **shadcn/ui** — todo el panel admin (Button, Input, Card, Table, Badge, Dialog, Dropdown, Tabs, Select, Switch, Toast…)
-- **Motion** (Framer Motion) — el frontend público, con moderación
-- **PostgreSQL** — vía `pg` y migraciones SQL planas
-- **Railway Storage Bucket** (S3-compatible) — subida de media, con fallback a disco local en dev
-- **Railway** — deploy + cron/worker para las publicaciones agendadas
-
-## Áreas
-
-- **Público** — `/` (home: hero com pilha de fotos recentes + mural de loucuras de IA),
-  `/manifiesto` (manifesto de O Outro José), `/about` (concepto), `/archive` (o arquivo completo).
-- **Admin privado** — `/admin` (dashboard, lista, crear, subir, agendar, estado por plataforma, publicar ahora, dry-run, historial).
-
-## Modelo
-
-- **media_items** — `id, slug, title, caption, media_url, media_type (image|video), platforms[], publish_at, persona, status (draft|ready|scheduled|publishing|completed|failed), retain_media_after_publish, created_at, updated_at`.
-- **platform_publications** — una fila por `(item, plataforma)`: `status (pending|publishing|published|failed|skipped), remote_post_id, permalink, error, attempts, published_at`.
-- **publish_logs** — historial append-only para `/admin/logs` y la línea de tiempo de cada item.
-
-## Flujo de publicación
-
-1. El admin crea el item y sube la media (al bucket, o a `public/uploads` en dev).
-2. El item queda `draft`.
-3. Al marcarlo `ready` o al llegar `publish_at`, el worker lo procesa.
-4. Para cada plataforma: si ya fue publicada, se ignora (idempotente, nunca duplica).
-5. Se resuelve una URL accesible de la media cuando hace falta (signed URL para S3).
-6. Se publica con el **adapter** de la plataforma.
-7. Se guardan `remote_post_id` y `permalink`; si falla, se registra el `error`.
-8. Cuando todas las plataformas terminan, el item queda `completed` (o `failed`).
-9. Si `retain_media_after_publish = false`, la media se borra del bucket tras el éxito completo.
-
-### Adapters
-
-Uno por plataforma, todos exponen `publishMedia(input, { dryRun })`:
-
-```
-app/services/platforms/x.server.ts          OAuth 1.0a · upload + POST /2/tweets
-app/services/platforms/instagram.server.ts  Graph API · container → publish
-app/services/platforms/facebook.server.ts   Graph API · /photos | /videos
-app/services/platforms/threads.server.ts    Threads API · container → publish
-```
-
-Reglas: APIs oficiales (sin Playwright/Selenium ni automatización de navegador), tokens nunca hardcodeados, sin duplicados. Si falta un token la plataforma se marca **skipped** con un error claro. Con `DRY_RUN=true` los adapters **simulan** (devuelven un resultado mock) sin tocar la red.
-
----
+- **React Router v7** (framework mode, SSR)
+- **TailwindCSS v4** CSS-first con tokens oklch, estética brutalista
+- **Prisma** + **PostgreSQL**
+- **Better Auth** (Google OAuth, allowlist de un único email para el admin)
+- **grammY** (bot de Telegram, modo webhook)
+- **Google Gemini** como proveedor único: texto, imagen, video y moderación
+- **Railway** + **Docker** para el deploy
 
 ## Requisitos
 
-- **Node.js 22.13+**
-- **pnpm**
-- **PostgreSQL** (local, Docker, o un Postgres de Railway)
+- Node `>=22.13` y **pnpm 11**
+- Una base PostgreSQL (`DATABASE_URL`)
+- Credenciales de **Google OAuth** para el login del admin
+- La clave de **Gemini** y el bot de **Telegram** se cargan después, desde el admin
 
-## Instalación local
+## Configuración (dos niveles)
+
+Los secretos están partidos en dos, por un motivo de seguridad: algunos se necesitan **antes**
+de poder loguearte, así que no pueden vivir detrás del login.
+
+- **Bootstrap (`.env`):** solo lo imprescindible para arrancar y loguear —
+  `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFIG_ENCRYPTION_KEY`, las credenciales de Google OAuth
+  y `ADMIN_EMAIL`. La página pública **`/setup`** muestra el estado de cada uno y cómo obtenerlo.
+- **Operacional (admin, cifrado en la base):** la API key de Gemini, los tokens de Telegram,
+  el `CRON_SECRET`, los IDs de modelo y el idioma se cargan y editan en **`/admin/settings`**,
+  guardados cifrados (AES-256-GCM) con la `CONFIG_ENCRYPTION_KEY`.
 
 ```bash
-git clone https://github.com/zeluizr/thefirm.com.br.git
+openssl rand -base64 32   # → BETTER_AUTH_SECRET
+openssl rand -hex 32      # → CONFIG_ENCRYPTION_KEY
+```
+
+## Instalación
+
+```bash
+git clone https://github.com/zeluizr/thefirm.com.br
 cd thefirm.com.br
 pnpm install
-cp .env.example .env
+cp .env.example .env   # completá SOLO el bloque de bootstrap
+pnpm db:migrate:dev    # crea el esquema en tu Postgres
+pnpm db:seed           # carga las categorías iniciales
 ```
 
-Un Postgres rápido con Docker:
+Después, entrá a `/admin/settings` y cargá Gemini, Telegram y el cron secret.
+
+## Desarrollo
 
 ```bash
-docker run -d --name thefirm-pg \
-  -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=thefirm \
-  -p 5432:5432 postgres:16-alpine
+pnpm dev               # levanta el sitio + admin en http://localhost:5173
+pnpm bot:dev           # 2º terminal: long polling, para que los botones del Telegram funcionen
+pnpm db:studio         # inspecciona la base con Prisma Studio
 ```
 
-Editá `.env` con tu `DATABASE_URL` y generá el hash del admin:
+El admin vive en `/admin` y solo deja entrar al email de `ADMIN_EMAIL`. Desde ahí gestionás
+posts, categorías, blocklist, logs y la configuración. Para probar el flujo:
+
+1. **Panel → "forçar agora"** genera un post (texto + imagen + moderación) y lo manda al Telegram.
+2. Aprobás **desde el Telegram** (con `bot:dev` corriendo) o **desde el admin**: abrí el post en
+   **Posts**, leé el contenido completo y tocá **aprobar y publicar**.
+3. El post aparece en el sitio en `http://localhost:5173/`.
+
+> Los botones del Telegram necesitan algo escuchando los toques: en local es `pnpm bot:dev`;
+> en producción es el webhook (URL pública), sin proceso extra. El `chat_id`/`admin_id` del
+> Telegram es tu **id numérico de usuario** (te lo da @userinfobot), no el @username ni el id del bot.
+
+## Producción
 
 ```bash
-pnpm run hash-password -- 'tu-contraseña'   # pegá el resultado en ADMIN_PASSWORD_HASH
+pnpm build
+pnpm start             # sirve ./build/server/index.js
 ```
 
-Migrá, sembrá datos de ejemplo y levantá el dev server:
+En **Railway** (con el `Dockerfile` incluido):
 
-```bash
-pnpm run migrate
-pnpm run seed        # opcional — crea piezas de ejemplo
-pnpm run dev
+- Web service: corre la migración y arranca el servidor (`pnpm db:migrate && pnpm start`).
+  Montá un **Volume** en `MEDIA_DIR` para guardar las imágenes y videos generados.
+- El **cron diario** dispara el pipeline llamando al endpoint protegido, para que la
+  generación corra dentro del web service y escriba en su volumen:
+
+  ```bash
+  curl -X POST -H "x-cron-secret: $CRON_SECRET" "$APP_URL/api/cron/daily"
+  ```
+
+- Telegram en modo webhook apunta a `/api/webhooks/telegram` (con `TELEGRAM_WEBHOOK_SECRET`).
+
+Todas las variables están documentadas en `.env.example`.
+
+## Estructura
+
 ```
-
-- Público: `http://localhost:5173/`
-- Admin: `http://localhost:5173/admin` (entrá con `ADMIN_EMAIL` + tu contraseña)
-
-> Sin bucket configurado, la media se guarda en `public/uploads` (ignorado por git) y `DRY_RUN=true` simula las publicaciones — la app funciona de punta a punta sin ninguna credencial de red.
-
-## Comandos
-
-```bash
-pnpm run dev            # dev server (Vite + SSR)
-pnpm run build          # build de producción → ./build
-pnpm run start          # sirve el build (react-router-serve)
-pnpm run migrate        # aplica las migraciones de /migrations
-pnpm run seed           # datos de ejemplo (admin)
-pnpm run seed:samples   # posts placeholder (dev) para ver el mural de la home
-pnpm run seed:posts     # crea posts a partir de tus archivos en public/posts/
-pnpm run publish-due    # procesa los items pronto/agendados vencidos (worker)
-pnpm run dry-run        # simula los vencidos sin persistir nada
-pnpm run hash-password -- 'pass'   # bcrypt hash para ADMIN_PASSWORD_HASH
-pnpm run typecheck      # tipos
+app/                  # React Router: sitio público + admin
+  routes/             # home, post, login, admin/*, api/*
+  components/         # UI brutalista + primitivos shadcn
+  lib/                # utils, cliente de auth
+server/               # lógica de servidor (fuera del bundle del cliente)
+  lib/                # db, env, gemini, config cifrada (crypto), storage, auth, slug
+  generator/          # generación de texto + prompt versionado
+  moderation/         # doble filtro (safety + clasificador)
+  media/              # imagen (Nano Banana) y video (Veo)
+  telegram/           # bot, notify, formato y poll (bot:dev)
+  pipeline/           # orquestación diaria (1 post/día por LRU)
+  cron/               # entrypoint del cron standalone
+prisma/               # schema + migrations + seed
 ```
-
-## Variables de entorno
-
-Ver `.env.example`. Resumen:
-
-| Variable | Para qué |
-|---|---|
-| `DATABASE_URL` | conexión a PostgreSQL |
-| `SESSION_SECRET` | firma de la cookie de sesión |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH` | login del admin (hash bcrypt) |
-| `APP_URL` | URL pública (para armar URLs absolutas de media) |
-| `CRON_SECRET` | protege `POST /api/cron/publish-due` (opcional) |
-| `RAILWAY_BUCKET*` | bucket S3-compatible (endpoint, región, keys) |
-| `X_*` | claves y tokens OAuth 1.0a de X |
-| `META_*` / `FACEBOOK_PAGE_ID` / `INSTAGRAM_BUSINESS_ACCOUNT_ID` | Graph API (IG + FB Page) |
-| `THREADS_*` | token y user id de Threads |
-| `DRY_RUN` | `true` simula; dejalo en `true` hasta tener tokens válidos |
-| `DEFAULT_TIMEZONE` | zona horaria por defecto |
-
-Endpoints de ops: `GET /health` (liveness + DB) y `POST /api/cron/publish-due`.
-
----
-
-## Deploy en Railway
-
-1. **Proyecto + Postgres**
-
-   Creá un proyecto en Railway y agregá un plugin **PostgreSQL**. Railway expone `DATABASE_URL` (referenciala con `${{Postgres.DATABASE_URL}}`).
-
-2. **Servicio de la app**
-
-   Conectá este repo. `railway.json` ya define el build (Nixpacks) y el start: corre las migraciones y arranca el server, con healthcheck en `/health`:
-
-   ```
-   startCommand: pnpm run migrate && pnpm run start
-   ```
-
-   Railway usa pnpm automáticamente (campo `packageManager`).
-
-3. **Storage Bucket**
-
-   Agregá un **Storage Bucket** y cargá `RAILWAY_BUCKET`, `RAILWAY_BUCKET_ENDPOINT`, `RAILWAY_BUCKET_REGION`, `RAILWAY_BUCKET_ACCESS_KEY_ID`, `RAILWAY_BUCKET_SECRET_ACCESS_KEY`.
-
-4. **Variables**
-
-   Cargá las del cuadro de arriba. Mantené `DRY_RUN=true` hasta verificar los tokens de cada red; después poné `DRY_RUN=false`. Definí `APP_URL` con tu dominio final (`https://thefirm.com.br`).
-
-5. **Cron / worker de publicaciones**
-
-   El worker es el comando `pnpm run publish-due`. Dos formas de dispararlo:
-
-   - **Railway Cron (recomendado):** creá un servicio cron (mismo repo) con schedule, por ejemplo `*/5 * * * *`, y start command `pnpm run publish-due`. Procesa todo lo vencido y termina.
-   - **Cron HTTP:** pegale a `POST /api/cron/publish-due` (o `GET ...?secret=...`) con el header `x-cron-secret: $CRON_SECRET`.
-
-## Dominio thefirm.com.br
-
-1. En el servicio de la app: **Settings → Networking → Custom Domain**, agregá `thefirm.com.br` (y `www.thefirm.com.br` si querés).
-2. Railway te da un destino **CNAME**. En tu DNS:
-   - `www` → CNAME al destino de Railway.
-   - Raíz `thefirm.com.br` → usá **ALIAS/ANAME** al destino de Railway, o el CNAME de raíz si tu proveedor lo soporta (Cloudflare: CNAME con _proxy_).
-3. Esperá la verificación; Railway emite el TLS automáticamente.
-4. Poné `APP_URL=https://thefirm.com.br` en las variables y redeploy.
-
----
 
 _Hecho con amor y café por [zeluizr](https://github.com/zeluizr) y con la ayuda de [Claude](https://claude.ai/referral/Cz_UimA0NQ) ☕_

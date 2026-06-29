@@ -5,8 +5,8 @@ node_modules
 /.react-router
 
 .env
-
-# locally-uploaded media (storage fallback)
-/public/uploads
-
+.env.*
+!.env.example
 .DS_Store
+
+/data
