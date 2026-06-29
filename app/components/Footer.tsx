@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
-import { Globe, ScrollText } from 'lucide-react'
+import { Globe, Image as ImageIcon, ScrollText } from 'lucide-react'
 
 import { inView, reveal, stagger } from '~/lib/motion'
 
@@ -55,7 +55,14 @@ export function Footer() {
               className='inline-flex items-center gap-2 border-2 border-bone bg-magenta px-3.5 py-2 font-mono text-[13px] uppercase leading-none tracking-[1px] text-void no-underline transition-colors duration-150 hover:bg-bone motion-reduce:transition-none'
             >
               <ScrollText size={14} strokeWidth={2.5} aria-hidden='true' />
-              manifiesto
+              manifesto
+            </Link>
+            <Link
+              to='/archive'
+              className='inline-flex items-center gap-2 border-2 border-bone px-3.5 py-2 font-mono text-[13px] uppercase leading-none tracking-[1px] no-underline transition-colors duration-150 hover:bg-magenta hover:text-void motion-reduce:transition-none'
+            >
+              <ImageIcon size={14} strokeWidth={2.5} aria-hidden='true' />
+              arquivo
             </Link>
             {footLinks.map((link) => (
               <a
@@ -77,10 +84,10 @@ export function Footer() {
           </div>
           <div className='font-mono text-[12px] leading-[1.85] tracking-[1px] text-bone-dim'>
             São Paulo → Santiago ·{' '}
-            <span className='text-magenta'>todavía rodando</span>
-            <br />© thefirm.com.br — resucitado en 2026, rumbo a los 20 años
+            <span className='text-magenta'>transmissão contínua</span>
+            <br />© thefirm.com.br — o fotolog de IA de O Outro José
             <br />
-            best viewed with the sound of urethane on concrete
+            best viewed no escuro, com o volume alto
           </div>
           </motion.div>
         </motion.div>

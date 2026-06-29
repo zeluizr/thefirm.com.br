@@ -10,105 +10,100 @@ import type { Route } from './+types/manifiesto'
 
 export function meta(_: Route.MetaArgs) {
   return [
-    { title: 'manifiesto — the firm' },
+    { title: 'manifesto — the firm' },
     {
       name: 'description',
       content:
-        'thefirm.com.br — un documento sin permiso. músico, skater, y de vuelta a la web por la escena.',
+        'thefirm.com.br — o manifesto de O Outro José. Um fotolog de loucuras geradas por IA, sem cliente e sem permissão.',
     },
   ]
 }
 
 export default function Manifiesto() {
   return (
-    <main className='relative pt-[clamp(40px,7vw,80px)] pb-24 bp:pb-32'>
+    <main className="relative pt-[clamp(40px,7vw,80px)] pb-24 bp:pb-32">
       <Wrap>
-        <motion.div variants={stagger} initial='hidden' animate='show'>
-          <motion.div variants={reveal} className='mb-10'>
+        <motion.div variants={stagger} initial="hidden" animate="show">
+          <motion.div variants={reveal} className="mb-10">
             <Link
-              to='/'
-              className='inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[2px] text-bone-dim no-underline transition-colors duration-150 hover:text-magenta motion-reduce:transition-none'
+              to="/"
+              className="inline-flex items-center gap-2 font-mono text-[13px] uppercase tracking-[2px] text-bone-dim no-underline transition-colors duration-150 hover:text-magenta motion-reduce:transition-none"
             >
-              ← volver
+              ← voltar
             </Link>
           </motion.div>
 
-          <motion.div variants={reveal} className='mb-6'>
-            <Eyebrow>documento sin permiso · 20/03/2027</Eyebrow>
+          <motion.div variants={reveal} className="mb-6">
+            <Eyebrow>documento sem permissão · o outro josé</Eyebrow>
           </motion.div>
 
           <motion.h1
             variants={reveal}
-            className='glitch font-display text-[clamp(56px,13vw,150px)] uppercase leading-[0.82] tracking-[-0.03em]'
+            className="glitch font-display text-[clamp(56px,13vw,150px)] uppercase leading-[0.82] tracking-[-0.03em]"
           >
             mani
             <br />
-            fiesto<span className='text-wire'>.</span>
+            festo<span className="text-wire">.</span>
           </motion.h1>
 
           <motion.div
             variants={reveal}
-            className='mt-12 max-w-180 space-y-7 text-[clamp(18px,2.2vw,22px)] font-medium leading-[1.5]'
+            className="mt-12 max-w-180 space-y-7 text-[clamp(18px,2.2vw,22px)] font-medium leading-[1.5]"
           >
             <p>
-              Soy <b className='bg-magenta px-1 font-bold text-void'>músico</b>.
-              Soy <b className='bg-magenta px-1 font-bold text-void'>skater</b>.
-              Eso vino primero y va a quedar.
+              Eu sou <b className="bg-magenta px-1 font-bold text-void">O Outro José</b> — o
+              que sobra quando o trabalho acaba e a máquina continua sonhando.
             </p>
             <p>
-              Este es el dominio más viejo que tengo. Lo dejé prendido veinte
-              años, renovación tras renovación, sin nada adentro. Ahora hace lo
-              que se le canta.
+              Este é o domínio mais velho que tenho. Fiquei vinte anos renovando ele sem nada
+              dentro. Agora ele virou um <b className="text-bone">fotolog de IA</b>: um mural
+              das minhas loucuras.
             </p>
             <p>
-              La idea es simple: tengo ideas y sé armar sitios. Hay gente con
-              talento y sin un lugar en la web. Puedo armárselo. Gratis. Porque
-              sí.
+              A ideia é simples. Eu tenho uma imagem na cabeça, peço pra máquina, e ela me
+              devolve algo torto, bonito, estranho. Eu escrevo uma legenda e transmito. Sem
+              cliente, sem briefing, sem alguém pra agradar.
             </p>
             <p>
-              Estos cuatro sitios — <b className='text-bone'>Plasma</b>,{' '}
-              <b className='text-bone'>AfroX</b>,{' '}
-              <b className='text-bone'>Denis Buiu</b> y{' '}
-              <b className='text-bone'>Fabio Sleiman</b> — son los primeros. La
-              marca, el cantor y los cracks del team. De vuelta, veinte años
-              después.
+              Não é portfólio. Não é produto. São{' '}
+              <b className="text-bone">loucuras</b> — o que aparece quando você deixa o
+              algoritmo sonhar e não tem vergonha de mostrar.
             </p>
           </motion.div>
 
-          {/* el regalo del aniversario, tapado hasta que lo destapás */}
+          {/* a regra única, tapada até você tocar */}
           <motion.div
             variants={reveal}
-            className='mt-14 border-[3px] border-bone bg-void-2 p-7 shadow-hard bp:mt-16 bp:p-10'
+            className="mt-14 border-[3px] border-bone bg-void-2 p-7 shadow-hard bp:mt-16 bp:p-10"
           >
-            <p className='font-mono text-[12px] uppercase tracking-[2px] text-bone-dim'>
-              spoiler · el 20/03/2027 · tocá para revelar
+            <p className="font-mono text-[12px] uppercase tracking-[2px] text-bone-dim">
+              a regra única · toque para revelar
             </p>
-            <p className='mt-5 text-[clamp(20px,3.4vw,32px)] font-bold leading-[1.35]'>
-              <Spoiler className='spoiler--magenta spoiler--block'>
-                una app gratis para que cualquier músico o skater arme su propio
-                sitio: elegís un layout, ponés tus datos, y queda online. sin
-                código, sin costo, sin pedir permiso.
+            <p className="mt-5 text-[clamp(20px,3.4vw,32px)] font-bold leading-[1.35]">
+              <Spoiler className="spoiler--magenta spoiler--block">
+                publicar antes de pensar demais. a dúvida mata a loucura — então a imagem sai
+                crua, do jeito que a máquina cuspiu.
               </Spoiler>
             </p>
           </motion.div>
 
           <motion.div
             variants={reveal}
-            className='mt-14 border-t-[3px] border-bone pt-8 bp:mt-16'
+            className="mt-14 border-t-[3px] border-bone pt-8 bp:mt-16"
           >
-            <p className='font-display text-[clamp(24px,4.5vw,44px)] uppercase leading-none tracking-[-0.02em]'>
-              sin clientes.
+            <p className="font-display text-[clamp(24px,4.5vw,44px)] uppercase leading-none tracking-[-0.02em]">
+              sem cliente.
               <br />
-              sin facturas.
+              sem briefing.
               <br />
-              sin jefes.
+              sem freio.
             </p>
-            <p className='mt-6 max-w-160 font-medium leading-[1.5] text-bone-dim'>
-              Solo la escena y lo que se me cante construir. The Firm no le debe
-              nada a nadie.
+            <p className="mt-6 max-w-160 font-medium leading-[1.5] text-bone-dim">
+              Só eu, a máquina, e o que O Outro José resolve transmitir. The Firm não deve nada
+              a ninguém.
             </p>
-            <p className='mt-8 font-mono text-[13px] uppercase tracking-[2px] text-magenta'>
-              — the firm · são paulo → santiago · todavía rodando
+            <p className="mt-8 font-mono text-[13px] uppercase tracking-[2px] text-magenta">
+              — the firm · o fotolog de o outro josé · transmissão contínua
             </p>
           </motion.div>
         </motion.div>
